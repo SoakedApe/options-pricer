@@ -1,5 +1,9 @@
 # options-pricer
 
+![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)
+
 Black-Scholes option pricer with Monte Carlo validation, full Greeks, and an implied volatility solver. Includes a web UI.
 
 ## What it prices
