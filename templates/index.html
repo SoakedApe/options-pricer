@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Options Pricer</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; color: #111; }
+  h1 { font-size: 1.4rem; font-weight: 500; margin-bottom: 8px; }
+  .subtitle { color: #666; margin-bottom: 28px; font-size: 0.9rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  label { font-size: 0.8rem; color: #555; display: block; margin-bottom: 4px; }
+  input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box; }
+  button { background: #111; color: #fff; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
+  button:hover { background: #333; }
+  .results { margin-top: 24px; display: none; }
+  .results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .card { background: #f8f8f8; border-radius: 8px; padding: 12px 16px; }
+  .card-label { font-size: 0.75rem; color: #666; margin-bottom: 4px; }
+  .card-value { font-size: 1.3rem; font-weight: 500; }
+  .mc-note { font-size: 0.8rem; color: #888; margin-top: 12px; }
+  .error { color: #c00; font-size: 0.85rem; margin-top: 8px; }
+</style>
+</head>
+<body>
+<h1>Options Pricer</h1>
+<p class="subtitle">Black-Scholes pricing with Monte Carlo validation and implied volatility solver.</p>
+
+<div class="grid">
+  <div><label>Spot price (S)</label><input id="spot" type="number" value="100" step="0.01"></div>
+  <div><label>Strike price (K)</label><input id="strike" type="number" value="100" step="0.01"></div>
+  <div><label>Expiry (days)</label><input id="expiry" type="number" value="30" step="1"></div>
+  <div><label>Risk-free rate (%)</label><input id="rate" type="number" value="5" step="0.1"></div>
+  <div><label>Volatility (%)</label><input id="vol" type="number" value="20" step="0.1"></div>
+  <div><label>Type</label><select id="type"><option value="call">Call</option><option value="put">Put</option></select></div>
+</div>
+<button onclick="price()">Calculate</button>
+<div class="error" id="error"></div>
+
+<div class="results" id="results">
+  <h2 style="font-size:1rem;font-weight:500;margin:24px 0 12px">Results</h2>
+  <div class="results-grid">
+    <div class="card"><div class="card-label">BS Price</div><div class="card-value" id="r-price">—</div></div>
+    <div class="card"><div class="card-label">Delta</div><div class="card-value" id="r-delta">—</div></div>
+    <div class="card"><div class="card-label">Gamma</div><div class="card-value" id="r-gamma">—</div></div>
+    <div class="card"><div class="card-label">Theta / day</div><div class="card-value" id="r-theta">—</div></div>
+    <div class="card"><div class="card-label">Vega / 1%</div><div class="card-value" id="r-vega">—</div></div>
+    <div class="card"><div class="card-label">Rho / 1%</div><div class="card-value" id="r-rho">—</div></div>
+  </div>
+  <p class="mc-note">Monte Carlo (50k paths): <span id="r-mc">—</span> &nbsp; 95% CI: [<span id="r-ci">—</span>]</p>
+</div>
+
+<script>
+async function price() {
+  document.getElementById("error").textContent = "";
+  try {
+    const res = await fetch("/price", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        spot: document.getElementById("spot").value,
+        strike: document.getElementById("strike").value,
+        expiry_days: document.getElementById("expiry").value,
+        rate: document.getElementById("rate").value,
+        vol: document.getElementById("vol").value,
+        option_type: document.getElementById("type").value,
+      })
+    });
+    const d = await res.json();
+    document.getElementById("r-price").textContent = d.bs_price;
+    document.getElementById("r-delta").textContent = d.delta;
+    document.getElementById("r-gamma").textContent = d.gamma;
+    document.getElementById("r-theta").textContent = d.theta;
+    document.getElementById("r-vega").textContent  = d.vega;
+    document.getElementById("r-rho").textContent   = d.rho;
+    document.getElementById("r-mc").textContent    = d.mc_price;
+    document.getElementById("r-ci").textContent    = d.mc_ci[0] + ", " + d.mc_ci[1];
+    document.getElementById("results").style.display = "block";
+  } catch(e) {
+    document.getElementById("error").textContent = "Error: " + e.message;
+  }
+}
+</script>
+</body>
+</html>
